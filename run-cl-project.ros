@@ -1,0 +1,63 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp(ql:quickload '("cl-project") :silent t)
+  )
+
+(defpackage :ros.script.run-cl-project.3936918997
+  (:use :cl))
+(in-package :ros.script.run-cl-project.3936918997)
+
+(defun parse (argv &optional (result nil))
+  (if (null argv)
+      result
+      (let ((option (car argv))
+            (item nil))
+        (cond ((or (string= option "--project-path")
+                   (string= option "-p"))
+               (setq item (list (pathname (cadr argv)))))
+              ((or (string= option "--name")
+                   (string= option "-n"))
+               (setq item (list :name (cadr argv))))
+              ((or (string= option "--short-name")
+                   (string= option "-s"))
+               (setq item (list :short-name (cadr argv))))
+              ((or (string= option "--author")
+                   (string= option "-a"))
+               (setq item (list :author (cadr argv))))
+              ((or (string= option "--maintainer")
+                   (string= option "-m"))
+               (setq item (list :maintainer (cadr argv))))
+              ((or (string= option "--email")
+                   (string= option "-e"))
+               (setq item (list :email (cadr argv))))
+              ((or (string= option "--license")
+                   (string= option "-l"))
+               (setq item (list :license (cadr argv))))
+              ((or (string= option "--version")
+                   (string= option "-v"))
+               (setq item (list :version (cadr argv))))
+              ((or (string= option "--description")
+                   (string= option "-d"))
+               (setq item (list :description (cadr argv)))))
+        (if item
+            (parse (cddr argv) (append result item))
+            (parse (cdr argv) result)))))
+
+(defmacro get-param-from-list (option target)
+  (let ((tmp (gensym)))
+    `(let ((,tmp (member ,option ,target :key #'car)))
+       (if ,tmp
+           (car ,tmp)
+           nil))))
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (let ((parsed (parse argv)))
+    (when parsed
+      (apply #'cl-project:make-project parsed))))
+;;; vim: set ft=lisp lisp:
